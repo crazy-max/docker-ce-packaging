@@ -12,6 +12,21 @@ fi
 
 source "../scripts/target-platform"
 
+check_static() {
+  if ! out=$(file -L -b "${1}" 2>&1); then
+    echo >&2 "failed to run file for ${f}: $out"
+    exit 1
+  fi
+  if echo "$out" | grep -E "statically linked|static-pie" >/dev/null; then
+    return
+  fi
+  if echo "$out" | grep " pie " | grep -v ", interpreter " >/dev/null; then
+    return
+  fi
+  echo >&2 "file ${f} is not statically linked: $out"
+  exit 1
+}
+
 build_cli() {
   [ -d "${CLI_DIR:?}/build" ] && rm -r "${CLI_DIR:?}/build"
   (
@@ -22,7 +37,7 @@ build_cli() {
       --build-arg "PRODUCT" --build-arg "PLATFORM" --build-arg "DEFAULT_PRODUCT_LICENSE" --build-arg "PACKAGER_NAME" \
       --build-arg "VERSION=${STATIC_VERSION}" \
       --build-arg "BUILDKIT_MULTI_PLATFORM=true" \
-      --build-arg "CGO_ENABLED=${cgo_enabled}" \
+      --build-arg "CGO_ENABLED" \
       --output "./build" \
       --target binary .
   )
@@ -39,7 +54,7 @@ build_engine() {
       --build-arg "PRODUCT" --build-arg "PLATFORM" --build-arg "DEFAULT_PRODUCT_LICENSE" --build-arg "PACKAGER_NAME" \
       --build-arg "VERSION=${STATIC_VERSION}" \
       --build-arg "CONTAINERD_VERSION" --build-arg "RUNC_VERSION" \
-      --build-arg "CGO_ENABLED=${cgo_enabled}" \
+      --build-arg "CGO_ENABLED" \
       --output "./bundles" \
       --target binary .
     mkdir -p "./bundles/${TARGETPLATFORM}"
@@ -59,7 +74,7 @@ build_engine_cross() {
       --build-arg "CONTAINERD_VERSION" --build-arg "RUNC_VERSION" \
       --build-arg "CROSS=true" \
       --build-arg "DOCKER_CROSSPLATFORMS=${TARGETPLATFORM}" \
-      --build-arg "CGO_ENABLED=${cgo_enabled}" \
+      --build-arg "CGO_ENABLED" \
       --output "./bundles" \
       --target cross .
     mkdir -p "./bundles/${TARGETPLATFORM}"
@@ -89,11 +104,6 @@ echo "UNAME=$(uname -m)"
 echo "TARGETPLATFORM=${TARGETPLATFORM}"
 echo "CURPLATFORM=${CURPLATFORM}"
 echo "CROSS=${CROSS}"
-
-cgo_enabled=""
-if [ "$TARGETARCH" = "arm" ] && [ -n "$TARGETVARIANT" ]; then
-  cgo_enabled="0"
-fi
 
 targetPair="${TARGETOS}_${TARGETARCH}"
 if [ -n "$TARGETVARIANT" ]; then
@@ -135,7 +145,11 @@ esac
 # docker
 mkdir -p "${dockerBuildDir}"
 case ${TARGETOS} in
-  linux|darwin)
+  linux)
+    cp ${CLI_DIR}/build/${targetPair}/docker-${TARGETOS}-* "${dockerBuildDir}/docker"
+    check_static "${dockerBuildDir}/docker"
+    ;;
+  darwin)
     cp ${CLI_DIR}/build/${targetPair}/docker-${TARGETOS}-* "${dockerBuildDir}/docker"
     ;;
   windows)
@@ -147,6 +161,7 @@ case ${TARGETOS} in
     for f in dockerd containerd ctr containerd-shim containerd-shim-runc-v2 docker-init docker-proxy runc; do
       if [ -f "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" ]; then
         cp -L "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" "${dockerBuildDir}/$f"
+        check_static "${dockerBuildDir}/$f"
       fi
     done
     ;;
@@ -179,6 +194,9 @@ case ${TARGETOS} in
       if [ -f "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" ]; then
         mkdir -p "${rootlessExtrasBuildDir}"
         cp -L "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" "${rootlessExtrasBuildDir}/$f"
+        if [[ $f != *.sh ]]; then
+          check_static "${rootlessExtrasBuildDir}/$f"
+        fi
       fi
     done
     ;;
