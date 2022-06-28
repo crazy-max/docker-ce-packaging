@@ -109,7 +109,7 @@ build_scan() {
 		cd "${SCAN_DIR}"
 		set -x
 		# TODO: Add TARGETPLATFORM support on scan-cli-plugin repo to build efficiently with --platform
-		make TAG_NAME="${DOCKER_SCAN_REF}" cross
+		make GIT_TAG_NAME="${DOCKER_SCAN_REF}" cross
 	)
 }
 
@@ -317,14 +317,14 @@ if [ -d "${COMPOSE_DIR}/bin" ]; then
 fi
 
 # scan
-if [ -d "${SCAN_DIR}/bin" ]; then
+if [ -d "${SCAN_DIR}/dist" ]; then
 	mkdir -p "${scanBuildDir}"
 	case ${TARGETOS} in
 		linux | darwin)
-			cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}" "${scanBuildDir}/docker-scan"
+			cp "${SCAN_DIR}/dist/docker-scan_${TARGETOS}_${TARGETARCH}" "${scanBuildDir}/docker-scan"
 			;;
 		windows)
-			cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}.exe" "${scanBuildDir}/docker-scan.exe"
+			cp "${SCAN_DIR}/dist/docker-scan_${TARGETOS}_${TARGETARCH}.exe" "${scanBuildDir}/docker-scan.exe"
 			;;
 	esac
 	# package compose
