@@ -1,9 +1,9 @@
 # Building your own Docker static package
 
-Static packages can be built from this directory with the following syntax
+Static packages can be built from root directory with the following syntax
 
 ```console
-make TARGETPLATFORM=${TARGETOS}/${TARGETARCH}/${TARGETVARIANT} build
+make TARGETPLATFORM=${TARGETOS}/${TARGETARCH}/${TARGETVARIANT} static
 ```
 
 Format of `TARGETOS`, `TARGETARCH`, `TARGETVARIANT` is the same as the [platform ARGs in the global scope](https://docs.docker.com/engine/reference/builder/#automatic-platform-args-in-the-global-scope)
@@ -22,7 +22,7 @@ building packages
 * `CLI_DIR` -> Specifies the directory where the cli code is located, eg: `$GOPATH/src/github.com/docker/cli`
 
 ```shell
-make ENGINE_DIR=/path/to/engine CLI_DIR=/path/to/cli TARGETPLATFORM=linux/amd64 build
+make ENGINE_DIR=/path/to/engine CLI_DIR=/path/to/cli TARGETPLATFORM=linux/amd64 static
 ```
 
 ## Supported platforms
@@ -30,13 +30,13 @@ make ENGINE_DIR=/path/to/engine CLI_DIR=/path/to/cli TARGETPLATFORM=linux/amd64 
 Here is a list of platforms that are currently supported:
 
 ```console
-make TARGETPLATFORM=linux/amd64 build
-make TARGETPLATFORM=linux/arm/v6 build
-make TARGETPLATFORM=linux/arm/v7 build
-make TARGETPLATFORM=linux/arm64 build
-make TARGETPLATFORM=darwin/amd64 build
-make TARGETPLATFORM=darwin/arm64 build
-make TARGETPLATFORM=windows/amd64 build
+make TARGETPLATFORM=linux/amd64 static
+make TARGETPLATFORM=linux/arm/v6 static
+make TARGETPLATFORM=linux/arm/v7 static
+make TARGETPLATFORM=linux/arm64 static
+make TARGETPLATFORM=darwin/amd64 static
+make TARGETPLATFORM=darwin/arm64 static
+make TARGETPLATFORM=windows/amd64 static
 ```
 
 > note: `darwin` only packages the docker cli and plugins.
@@ -44,6 +44,12 @@ make TARGETPLATFORM=windows/amd64 build
 But you can test building against whatever platform you want like:
 
 ```console
-make TARGETPLATFORM=linux/riscv64 build
-make TARGETPLATFORM=linux/s390x build
+make TARGETPLATFORM=linux/riscv64 static
+make TARGETPLATFORM=linux/s390x static
+```
+
+Or the current one matching your host if not defined:
+
+```console
+make static
 ```
