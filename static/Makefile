@@ -4,6 +4,7 @@ CLI_DIR=$(realpath $(CURDIR)/../src/github.com/docker/cli)
 ENGINE_DIR=$(realpath $(CURDIR)/../src/github.com/docker/docker)
 BUILDX_DIR=$(realpath $(CURDIR)/../src/github.com/docker/buildx)
 COMPOSE_DIR=$(realpath $(CURDIR)/../src/github.com/docker/compose)
+SCAN_DIR=$(realpath $(CURDIR)/../src/github.com/docker/scan-cli-plugin)
 
 STATIC_VERSION=$(shell ./gen-static-ver $(CLI_DIR) $(VERSION))
 HASH_CMD=docker run -v $(CURDIR):/sum -w /sum debian:jessie bash hash_files
@@ -13,6 +14,7 @@ export CLI_DIR
 export ENGINE_DIR
 export BUILDX_DIR
 export COMPOSE_DIR
+export SCAN_DIR
 
 export STATIC_VERSION
 export CONTAINERD_VERSION

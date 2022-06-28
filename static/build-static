@@ -103,6 +103,16 @@ build_compose() {
   )
 }
 
+build_scan() {
+  [ -d "${SCAN_DIR:?}/bin" ] && rm -r "${SCAN_DIR:?}/bin"
+  (
+    cd "${SCAN_DIR}"
+    set -x
+    # TODO: Add TARGETPLATFORM support on scan-cli-plugin repo to build efficiently with --platform
+    make TAG_NAME="${DOCKER_SCAN_REF}" cross
+  )
+}
+
 CROSS=true
 if [ "$TARGETOS" = "linux" ] && [ "$CURARCH$CURVARIANT" = "$TARGETARCH$TARGETVARIANT" ]; then
   CROSS=false
@@ -129,6 +139,7 @@ dockerBuildDir="${buildDir}/docker"
 rootlessExtrasBuildDir="${buildDir}/docker-rootless-extras"
 buildxBuildDir="${buildDir}/docker-buildx"
 composeBuildDir="${buildDir}/docker-compose"
+scanBuildDir="${buildDir}/docker-scan"
 
 # create docker-container builder
 docker buildx inspect | grep -q 'Driver: docker-container' || docker buildx create --use
@@ -143,17 +154,26 @@ case ${TARGETOS} in
     fi
     build_buildx
     build_compose
+    # TODO change once we support scan-plugin on other architectures
+    if [ "${TARGETARCH}" = "amd64" ]; then
+      build_scan
+    fi
     ;;
   darwin)
     build_cli
     build_buildx
     build_compose
+    build_scan
     ;;
   windows)
     build_cli
     build_engine_cross
     build_buildx
     build_compose
+    # TODO change once we support scan-plugin on other architectures
+    if [ "${TARGETARCH}" = "amd64" ]; then
+      build_scan
+    fi
 esac
 
 # cleanup
@@ -223,73 +243,106 @@ if [ -d "${rootlessExtrasBuildDir}" ]; then
 fi
 
 # buildx
-mkdir -p "${buildxBuildDir}"
-case ${TARGETOS} in
-  linux|darwin)
-    cp "${BUILDX_DIR}/bin/${targetPair}/buildx" "${buildxBuildDir}/docker-buildx"
-    ;;
-  windows)
-    cp "${BUILDX_DIR}/bin/${targetPair}/buildx.exe" "${buildxBuildDir}/docker-buildx.exe"
-    ;;
-esac
+if [ -d "${BUILDX_DIR}/bin" ]; then
+  mkdir -p "${buildxBuildDir}"
+  case ${TARGETOS} in
+    linux|darwin)
+      cp "${BUILDX_DIR}/bin/${targetPair}/buildx" "${buildxBuildDir}/docker-buildx"
+      ;;
+    windows)
+      cp "${BUILDX_DIR}/bin/${targetPair}/buildx.exe" "${buildxBuildDir}/docker-buildx.exe"
+      ;;
+  esac
 # package buildx
-case ${TARGETOS} in
-  linux|darwin)
-    (
-      set -x
-      tar -C "${buildDir}" -c -z -f "${buildDir}/docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.tar.gz" docker-buildx
-    )
-    ;;
-  windows)
-    (
-      cd "${buildDir}"
-      set -x
-      zip -r "docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.zip" docker-buildx
-    )
-    ;;
-esac
+  case ${TARGETOS} in
+    linux|darwin)
+      (
+        set -x
+        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.tar.gz" docker-buildx
+      )
+      ;;
+    windows)
+      (
+        cd "${buildDir}"
+        set -x
+        zip -r "docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.zip" docker-buildx
+      )
+      ;;
+  esac
+fi
 
 # compose
-mkdir -p "${composeBuildDir}"
-composeTargetPair="${TARGETOS}"
-case ${TARGETARCH} in
-  amd64)
-    composeTargetPair="${composeTargetPair}-x86_64"
-    ;;
-  arm64)
-    composeTargetPair="${composeTargetPair}-aarch64"
-    ;;
-  *)
-    composeTargetPair="${composeTargetPair}-${TARGETARCH}"
-    ;;
-esac
-if [ -n "$TARGETVARIANT" ]; then
-  composeTargetPair="${composeTargetPair}${TARGETVARIANT}"
+if [ -d "${COMPOSE_DIR}/bin" ]; then
+  mkdir -p "${composeBuildDir}"
+  composeTargetPair="${TARGETOS}"
+  case ${TARGETARCH} in
+    amd64)
+      composeTargetPair="${composeTargetPair}-x86_64"
+      ;;
+    arm64)
+      composeTargetPair="${composeTargetPair}-aarch64"
+      ;;
+    *)
+      composeTargetPair="${composeTargetPair}-${TARGETARCH}"
+      ;;
+  esac
+  if [ -n "$TARGETVARIANT" ]; then
+    composeTargetPair="${composeTargetPair}${TARGETVARIANT}"
+  fi
+  case ${TARGETOS} in
+    linux|darwin)
+      cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}" "${composeBuildDir}/docker-compose"
+      ;;
+    windows)
+      cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}.exe" "${composeBuildDir}/docker-compose.exe"
+      ;;
+  esac
+  # package compose
+  case ${TARGETOS} in
+    linux|darwin)
+      (
+        set -x
+        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.tar.gz" docker-compose
+      )
+      ;;
+    windows)
+      (
+        cd "${buildDir}"
+        set -x
+        zip -r "docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.zip" docker-compose
+      )
+      ;;
+  esac
 fi
-case ${TARGETOS} in
-  linux|darwin)
-    cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}" "${composeBuildDir}/docker-compose"
-    ;;
-  windows)
-    cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}.exe" "${composeBuildDir}/docker-compose.exe"
-    ;;
-esac
-# package compose
-case ${TARGETOS} in
-  linux|darwin)
-    (
-      set -x
-      tar -C "${buildDir}" -c -z -f "${buildDir}/docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.tar.gz" docker-compose
-    )
-    ;;
-  windows)
-    (
-      cd "${buildDir}"
-      set -x
-      zip -r "docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.zip" docker-compose
-    )
-    ;;
-esac
+
+# scan
+if [ -d "${SCAN_DIR}/bin" ]; then
+  mkdir -p "${scanBuildDir}"
+  case ${TARGETOS} in
+    linux|darwin)
+      cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}" "${scanBuildDir}/docker-scan"
+      ;;
+    windows)
+      cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}.exe" "${scanBuildDir}/docker-scan.exe"
+      ;;
+  esac
+  # package compose
+  case ${TARGETOS} in
+    linux|darwin)
+      (
+        set -x
+        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-scan-plugin-${DOCKER_SCAN_REF#v}.tar.gz" docker-scan
+      )
+      ;;
+    windows)
+      (
+        cd "${buildDir}"
+        set -x
+        zip -r "docker-scan-plugin-${DOCKER_SCAN_REF#v}.zip" docker-scan
+      )
+      ;;
+  esac
+fi
 
 # create bundle
 (
