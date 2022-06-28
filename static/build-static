@@ -15,107 +15,107 @@ fi
 source "../scripts/target-platform"
 
 build_cli() {
-  [ -d "${CLI_DIR:?}/build" ] && rm -r "${CLI_DIR:?}/build"
-  (
-    cd "${CLI_DIR}"
-    set -x
-    docker buildx build \
-      --build-arg BUILDKIT_MULTI_PLATFORM=true \
-      --build-arg CGO_ENABLED="${cgo_enabled}" \
-      --build-arg DEFAULT_PRODUCT_LICENSE \
-      --build-arg PACKAGER_NAME \
-      --build-arg PLATFORM \
-      --build-arg PRODUCT \
-      --build-arg VERSION="${STATIC_VERSION}" \
-      --output ./build \
-      --platform "${TARGETPLATFORM}" \
-      --target binary .
-  )
+	[ -d "${CLI_DIR:?}/build" ] && rm -r "${CLI_DIR:?}/build"
+	(
+		cd "${CLI_DIR}"
+		set -x
+		docker buildx build \
+			--build-arg BUILDKIT_MULTI_PLATFORM=true \
+			--build-arg CGO_ENABLED="${cgo_enabled}" \
+			--build-arg DEFAULT_PRODUCT_LICENSE \
+			--build-arg PACKAGER_NAME \
+			--build-arg PLATFORM \
+			--build-arg PRODUCT \
+			--build-arg VERSION="${STATIC_VERSION}" \
+			--output ./build \
+			--platform "${TARGETPLATFORM}" \
+			--target binary .
+	)
 }
 
 build_engine() {
-  [ -d "${ENGINE_DIR:?}/bundles" ] && rm -r "${ENGINE_DIR:?}/bundles"
-  (
-    cd "${ENGINE_DIR}"
-    mkdir -p autogen # FIXME: remove when https://github.com/moby/moby/pull/43431 merged
-    set -x
-    docker buildx build \
-      --build-arg CGO_ENABLED="${cgo_enabled}" \
-      --build-arg CONTAINERD_VERSION \
-      --build-arg DEFAULT_PRODUCT_LICENSE \
-      --build-arg PACKAGER_NAME \
-      --build-arg PLATFORM \
-      --build-arg PRODUCT \
-      --build-arg RUNC_VERSION \
-      --build-arg VERSION="${STATIC_VERSION}" \
-      --output ./bundles \
-      --platform "${TARGETPLATFORM}" \
-      --target binary .
-    mkdir -p ./bundles/"${TARGETPLATFORM}"
-    cp -r ./bundles/binary-daemon/* "./bundles/${TARGETPLATFORM}/"
-  )
+	[ -d "${ENGINE_DIR:?}/bundles" ] && rm -r "${ENGINE_DIR:?}/bundles"
+	(
+		cd "${ENGINE_DIR}"
+		mkdir -p autogen # FIXME: remove when https://github.com/moby/moby/pull/43431 merged
+		set -x
+		docker buildx build \
+			--build-arg CGO_ENABLED="${cgo_enabled}" \
+			--build-arg CONTAINERD_VERSION \
+			--build-arg DEFAULT_PRODUCT_LICENSE \
+			--build-arg PACKAGER_NAME \
+			--build-arg PLATFORM \
+			--build-arg PRODUCT \
+			--build-arg RUNC_VERSION \
+			--build-arg VERSION="${STATIC_VERSION}" \
+			--output ./bundles \
+			--platform "${TARGETPLATFORM}" \
+			--target binary .
+		mkdir -p ./bundles/"${TARGETPLATFORM}"
+		cp -r ./bundles/binary-daemon/* "./bundles/${TARGETPLATFORM}/"
+	)
 }
 
 build_engine_cross() {
-  [ -d "${ENGINE_DIR:?}/bundles" ] && rm -r "${ENGINE_DIR:?}/bundles"
-  (
-    cd "${ENGINE_DIR}"
-    mkdir -p autogen # FIXME: remove when https://github.com/moby/moby/pull/43431 merged
-    set -x
-    docker buildx build \
-      --build-arg CGO_ENABLED="${cgo_enabled}" \
-      --build-arg CONTAINERD_VERSION \
-      --build-arg CROSS=true \
-      --build-arg DEFAULT_PRODUCT_LICENSE \
-      --build-arg DOCKER_CROSSPLATFORMS="${TARGETPLATFORM}" \
-      --build-arg PACKAGER_NAME \
-      --build-arg PLATFORM \
-      --build-arg PRODUCT \
-      --build-arg RUNC_VERSION \
-      --build-arg VERSION="${STATIC_VERSION}" \
-      --output ./bundles \
-      --target cross .
-    mkdir -p "./bundles/${TARGETPLATFORM}"
-    cp ./bundles/cross/"${TARGETPLATFORM}"-daemon/* "./bundles/${TARGETPLATFORM}/"
-  )
+	[ -d "${ENGINE_DIR:?}/bundles" ] && rm -r "${ENGINE_DIR:?}/bundles"
+	(
+		cd "${ENGINE_DIR}"
+		mkdir -p autogen # FIXME: remove when https://github.com/moby/moby/pull/43431 merged
+		set -x
+		docker buildx build \
+			--build-arg CGO_ENABLED="${cgo_enabled}" \
+			--build-arg CONTAINERD_VERSION \
+			--build-arg CROSS=true \
+			--build-arg DEFAULT_PRODUCT_LICENSE \
+			--build-arg DOCKER_CROSSPLATFORMS="${TARGETPLATFORM}" \
+			--build-arg PACKAGER_NAME \
+			--build-arg PLATFORM \
+			--build-arg PRODUCT \
+			--build-arg RUNC_VERSION \
+			--build-arg VERSION="${STATIC_VERSION}" \
+			--output ./bundles \
+			--target cross .
+		mkdir -p "./bundles/${TARGETPLATFORM}"
+		cp ./bundles/cross/"${TARGETPLATFORM}"-daemon/* "./bundles/${TARGETPLATFORM}/"
+	)
 }
 
 build_buildx() {
-  [ -d "${BUILDX_DIR:?}/bin" ] && rm -r "${BUILDX_DIR:?}/bin"
-  (
-    cd "${BUILDX_DIR}"
-    set -x
-    docker buildx build \
-      --platform "${TARGETPLATFORM}" \
-      --build-arg BUILDKIT_MULTI_PLATFORM=true \
-      --output "./bin" \
-      --target binaries .
-  )
+	[ -d "${BUILDX_DIR:?}/bin" ] && rm -r "${BUILDX_DIR:?}/bin"
+	(
+		cd "${BUILDX_DIR}"
+		set -x
+		docker buildx build \
+			--platform "${TARGETPLATFORM}" \
+			--build-arg BUILDKIT_MULTI_PLATFORM=true \
+			--output "./bin" \
+			--target binaries .
+	)
 }
 
 build_compose() {
-  [ -d "${COMPOSE_DIR:?}/bin" ] && rm -r "${COMPOSE_DIR:?}/bin"
-  (
-    cd "${COMPOSE_DIR}"
-    set -x
-    # TODO: Add TARGETPLATFORM support on compose repo to build efficiently with buildx
-    make GIT_TAG="${DOCKER_COMPOSE_REF}" cross
-  )
+	[ -d "${COMPOSE_DIR:?}/bin" ] && rm -r "${COMPOSE_DIR:?}/bin"
+	(
+		cd "${COMPOSE_DIR}"
+		set -x
+		# TODO: Add TARGETPLATFORM support on compose repo to build efficiently with buildx
+		make GIT_TAG="${DOCKER_COMPOSE_REF}" cross
+	)
 }
 
 build_scan() {
-  [ -d "${SCAN_DIR:?}/bin" ] && rm -r "${SCAN_DIR:?}/bin"
-  (
-    cd "${SCAN_DIR}"
-    set -x
-    # TODO: Add TARGETPLATFORM support on scan-cli-plugin repo to build efficiently with --platform
-    make TAG_NAME="${DOCKER_SCAN_REF}" cross
-  )
+	[ -d "${SCAN_DIR:?}/bin" ] && rm -r "${SCAN_DIR:?}/bin"
+	(
+		cd "${SCAN_DIR}"
+		set -x
+		# TODO: Add TARGETPLATFORM support on scan-cli-plugin repo to build efficiently with --platform
+		make TAG_NAME="${DOCKER_SCAN_REF}" cross
+	)
 }
 
 CROSS=true
 if [ "$TARGETOS" = "linux" ] && [ "$CURARCH$CURVARIANT" = "$TARGETARCH$TARGETVARIANT" ]; then
-  CROSS=false
+	CROSS=false
 fi
 
 echo "UNAME=$(uname -m)"
@@ -125,12 +125,12 @@ echo "CROSS=${CROSS}"
 
 cgo_enabled=""
 if [ "$TARGETARCH" = "arm" ] && [ -n "$TARGETVARIANT" ]; then
-  cgo_enabled="0"
+	cgo_enabled="0"
 fi
 
 targetPair="${TARGETOS}_${TARGETARCH}"
 if [ -n "$TARGETVARIANT" ]; then
-  targetPair="${targetPair}_${TARGETVARIANT}"
+	targetPair="${targetPair}_${TARGETVARIANT}"
 fi
 
 buildDir="${CURDIR}/build/${TARGETPLATFORM}"
@@ -145,35 +145,36 @@ scanBuildDir="${buildDir}/docker-scan"
 docker buildx inspect | grep -q 'Driver: docker-container' || docker buildx create --use
 
 case ${TARGETOS} in
-  linux)
-    build_cli
-    if [ "$CROSS" = "false" ]; then
-      build_engine
-    else
-      build_engine_cross
-    fi
-    build_buildx
-    build_compose
-    # TODO change once we support scan-plugin on other architectures
-    if [ "${TARGETARCH}" = "amd64" ]; then
-      build_scan
-    fi
-    ;;
-  darwin)
-    build_cli
-    build_buildx
-    build_compose
-    build_scan
-    ;;
-  windows)
-    build_cli
-    build_engine_cross
-    build_buildx
-    build_compose
-    # TODO change once we support scan-plugin on other architectures
-    if [ "${TARGETARCH}" = "amd64" ]; then
-      build_scan
-    fi
+	linux)
+		build_cli
+		if [ "$CROSS" = "false" ]; then
+			build_engine
+		else
+			build_engine_cross
+		fi
+		build_buildx
+		build_compose
+		# TODO change once we support scan-plugin on other architectures
+		if [ "${TARGETARCH}" = "amd64" ]; then
+			build_scan
+		fi
+		;;
+	darwin)
+		build_cli
+		build_buildx
+		build_compose
+		build_scan
+		;;
+	windows)
+		build_cli
+		build_engine_cross
+		build_buildx
+		build_compose
+		# TODO change once we support scan-plugin on other architectures
+		if [ "${TARGETARCH}" = "amd64" ]; then
+			build_scan
+		fi
+		;;
 esac
 
 # cleanup
@@ -182,172 +183,172 @@ esac
 # docker
 mkdir -p "${dockerBuildDir}"
 case ${TARGETOS} in
-  linux|darwin)
-    cp "${CLI_DIR}"/build/"${targetPair}"/docker-"${TARGETOS}"-* "${dockerBuildDir}/docker"
-    ;;
-  windows)
-    cp "${CLI_DIR}"/build/"${targetPair}"/docker-"${TARGETOS}"-*.exe "${dockerBuildDir}/docker.exe"
-    ;;
+	linux | darwin)
+		cp "${CLI_DIR}"/build/"${targetPair}"/docker-"${TARGETOS}"-* "${dockerBuildDir}/docker"
+		;;
+	windows)
+		cp "${CLI_DIR}"/build/"${targetPair}"/docker-"${TARGETOS}"-*.exe "${dockerBuildDir}/docker.exe"
+		;;
 esac
 case ${TARGETOS} in
-  linux)
-    for f in dockerd containerd ctr containerd-shim containerd-shim-runc-v2 docker-init docker-proxy runc; do
-      if [ -f "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" ]; then
-        cp -L "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" "${dockerBuildDir}/$f"
-      fi
-    done
-    ;;
-  windows)
-    cp "${ENGINE_DIR}"/bundles/"${TARGETPLATFORM}"/dockerd-*.exe "${dockerBuildDir}/dockerd.exe"
-    cp "${ENGINE_DIR}"/bundles/"${TARGETPLATFORM}"/docker-proxy-*.exe "${dockerBuildDir}/docker-proxy.exe"
-    ;;
+	linux)
+		for f in dockerd containerd ctr containerd-shim containerd-shim-runc-v2 docker-init docker-proxy runc; do
+			if [ -f "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" ]; then
+				cp -L "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" "${dockerBuildDir}/$f"
+			fi
+		done
+		;;
+	windows)
+		cp "${ENGINE_DIR}"/bundles/"${TARGETPLATFORM}"/dockerd-*.exe "${dockerBuildDir}/dockerd.exe"
+		cp "${ENGINE_DIR}"/bundles/"${TARGETPLATFORM}"/docker-proxy-*.exe "${dockerBuildDir}/docker-proxy.exe"
+		;;
 esac
 # package docker
 case ${TARGETOS} in
-  linux|darwin)
-    (
-      set -x
-      tar -C "${buildDir}" -c -z -f "${buildDir}/docker-${STATIC_VERSION}.tar.tgz" docker
-    )
-    ;;
-  windows)
-    (
-      cd "${buildDir}"
-      set -x
-      zip -r "docker-${STATIC_VERSION}.zip" docker
-    )
-    ;;
+	linux | darwin)
+		(
+			set -x
+			tar -C "${buildDir}" -c -z -f "${buildDir}/docker-${STATIC_VERSION}.tar.tgz" docker
+		)
+		;;
+	windows)
+		(
+			cd "${buildDir}"
+			set -x
+			zip -r "docker-${STATIC_VERSION}.zip" docker
+		)
+		;;
 esac
 
 # rootless extras
 case ${TARGETOS} in
-  linux)
-    for f in rootlesskit rootlesskit-docker-proxy dockerd-rootless.sh dockerd-rootless-setuptool.sh vpnkit; do
-      if [ -f "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" ]; then
-        mkdir -p "${rootlessExtrasBuildDir}"
-        cp -L "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" "${rootlessExtrasBuildDir}/$f"
-      fi
-    done
-    ;;
+	linux)
+		for f in rootlesskit rootlesskit-docker-proxy dockerd-rootless.sh dockerd-rootless-setuptool.sh vpnkit; do
+			if [ -f "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" ]; then
+				mkdir -p "${rootlessExtrasBuildDir}"
+				cp -L "${ENGINE_DIR}/bundles/${TARGETPLATFORM}/$f" "${rootlessExtrasBuildDir}/$f"
+			fi
+		done
+		;;
 esac
 # package rootless extras
 if [ -d "${rootlessExtrasBuildDir}" ]; then
-  case ${TARGETOS} in
-    linux)
-      (
-        set -x
-        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-rootless-extras-${STATIC_VERSION}.tar.tgz" docker-rootless-extras
-      )
-      ;;
-  esac
+	case ${TARGETOS} in
+		linux)
+			(
+				set -x
+				tar -C "${buildDir}" -c -z -f "${buildDir}/docker-rootless-extras-${STATIC_VERSION}.tar.tgz" docker-rootless-extras
+			)
+			;;
+	esac
 fi
 
 # buildx
 if [ -d "${BUILDX_DIR}/bin" ]; then
-  mkdir -p "${buildxBuildDir}"
-  case ${TARGETOS} in
-    linux|darwin)
-      cp "${BUILDX_DIR}/bin/${targetPair}/buildx" "${buildxBuildDir}/docker-buildx"
-      ;;
-    windows)
-      cp "${BUILDX_DIR}/bin/${targetPair}/buildx.exe" "${buildxBuildDir}/docker-buildx.exe"
-      ;;
-  esac
-# package buildx
-  case ${TARGETOS} in
-    linux|darwin)
-      (
-        set -x
-        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.tar.gz" docker-buildx
-      )
-      ;;
-    windows)
-      (
-        cd "${buildDir}"
-        set -x
-        zip -r "docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.zip" docker-buildx
-      )
-      ;;
-  esac
+	mkdir -p "${buildxBuildDir}"
+	case ${TARGETOS} in
+		linux | darwin)
+			cp "${BUILDX_DIR}/bin/${targetPair}/buildx" "${buildxBuildDir}/docker-buildx"
+			;;
+		windows)
+			cp "${BUILDX_DIR}/bin/${targetPair}/buildx.exe" "${buildxBuildDir}/docker-buildx.exe"
+			;;
+	esac
+	# package buildx
+	case ${TARGETOS} in
+		linux | darwin)
+			(
+				set -x
+				tar -C "${buildDir}" -c -z -f "${buildDir}/docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.tar.gz" docker-buildx
+			)
+			;;
+		windows)
+			(
+				cd "${buildDir}"
+				set -x
+				zip -r "docker-buildx-plugin-${DOCKER_BUILDX_REF#v}.zip" docker-buildx
+			)
+			;;
+	esac
 fi
 
 # compose
 if [ -d "${COMPOSE_DIR}/bin" ]; then
-  mkdir -p "${composeBuildDir}"
-  composeTargetPair="${TARGETOS}"
-  case ${TARGETARCH} in
-    amd64)
-      composeTargetPair="${composeTargetPair}-x86_64"
-      ;;
-    arm64)
-      composeTargetPair="${composeTargetPair}-aarch64"
-      ;;
-    *)
-      composeTargetPair="${composeTargetPair}-${TARGETARCH}"
-      ;;
-  esac
-  if [ -n "$TARGETVARIANT" ]; then
-    composeTargetPair="${composeTargetPair}${TARGETVARIANT}"
-  fi
-  case ${TARGETOS} in
-    linux|darwin)
-      cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}" "${composeBuildDir}/docker-compose"
-      ;;
-    windows)
-      cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}.exe" "${composeBuildDir}/docker-compose.exe"
-      ;;
-  esac
-  # package compose
-  case ${TARGETOS} in
-    linux|darwin)
-      (
-        set -x
-        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.tar.gz" docker-compose
-      )
-      ;;
-    windows)
-      (
-        cd "${buildDir}"
-        set -x
-        zip -r "docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.zip" docker-compose
-      )
-      ;;
-  esac
+	mkdir -p "${composeBuildDir}"
+	composeTargetPair="${TARGETOS}"
+	case ${TARGETARCH} in
+		amd64)
+			composeTargetPair="${composeTargetPair}-x86_64"
+			;;
+		arm64)
+			composeTargetPair="${composeTargetPair}-aarch64"
+			;;
+		*)
+			composeTargetPair="${composeTargetPair}-${TARGETARCH}"
+			;;
+	esac
+	if [ -n "$TARGETVARIANT" ]; then
+		composeTargetPair="${composeTargetPair}${TARGETVARIANT}"
+	fi
+	case ${TARGETOS} in
+		linux | darwin)
+			cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}" "${composeBuildDir}/docker-compose"
+			;;
+		windows)
+			cp "${COMPOSE_DIR}/bin/docker-compose-${composeTargetPair}.exe" "${composeBuildDir}/docker-compose.exe"
+			;;
+	esac
+	# package compose
+	case ${TARGETOS} in
+		linux | darwin)
+			(
+				set -x
+				tar -C "${buildDir}" -c -z -f "${buildDir}/docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.tar.gz" docker-compose
+			)
+			;;
+		windows)
+			(
+				cd "${buildDir}"
+				set -x
+				zip -r "docker-compose-plugin-${DOCKER_COMPOSE_REF#v}.zip" docker-compose
+			)
+			;;
+	esac
 fi
 
 # scan
 if [ -d "${SCAN_DIR}/bin" ]; then
-  mkdir -p "${scanBuildDir}"
-  case ${TARGETOS} in
-    linux|darwin)
-      cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}" "${scanBuildDir}/docker-scan"
-      ;;
-    windows)
-      cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}.exe" "${scanBuildDir}/docker-scan.exe"
-      ;;
-  esac
-  # package compose
-  case ${TARGETOS} in
-    linux|darwin)
-      (
-        set -x
-        tar -C "${buildDir}" -c -z -f "${buildDir}/docker-scan-plugin-${DOCKER_SCAN_REF#v}.tar.gz" docker-scan
-      )
-      ;;
-    windows)
-      (
-        cd "${buildDir}"
-        set -x
-        zip -r "docker-scan-plugin-${DOCKER_SCAN_REF#v}.zip" docker-scan
-      )
-      ;;
-  esac
+	mkdir -p "${scanBuildDir}"
+	case ${TARGETOS} in
+		linux | darwin)
+			cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}" "${scanBuildDir}/docker-scan"
+			;;
+		windows)
+			cp "${SCAN_DIR}/bin/docker-scan_${TARGETOS}_${TARGETARCH}.exe" "${scanBuildDir}/docker-scan.exe"
+			;;
+	esac
+	# package compose
+	case ${TARGETOS} in
+		linux | darwin)
+			(
+				set -x
+				tar -C "${buildDir}" -c -z -f "${buildDir}/docker-scan-plugin-${DOCKER_SCAN_REF#v}.tar.gz" docker-scan
+			)
+			;;
+		windows)
+			(
+				cd "${buildDir}"
+				set -x
+				zip -r "docker-scan-plugin-${DOCKER_SCAN_REF#v}.zip" docker-scan
+			)
+			;;
+	esac
 fi
 
 # create bundle
 (
-  set -x
-  cd "${buildDir}"
-  rm -r */
-  tar -zvcf "${CURDIR}/build/bundles-ce-static-${TARGETOS}-${BUNDLEARCH}.tar.gz" .
+	set -x
+	cd "${buildDir}"
+	rm -r */
+	tar -zvcf "${CURDIR}/build/bundles-ce-static-${TARGETOS}-${BUNDLEARCH}.tar.gz" .
 )
